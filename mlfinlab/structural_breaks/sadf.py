@@ -31,7 +31,7 @@ def _get_sadf_at_t(X: pd.DataFrame, y: pd.DataFrame, min_length: int, model: str
             b_mean_, b_std_ = b_mean_[0, 0], b_std_[0, 0] ** 0.5
             all_adf = b_mean_ / b_std_
             if model[:2] == 'sm':
-                all_adf = np.abs(all_adf) / (y.shape[0]**phi)
+                all_adf = np.abs(all_adf) / (y_.shape[0]**phi)
             if all_adf > bsadf:
                 bsadf = all_adf
     return bsadf
