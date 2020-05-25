@@ -42,7 +42,7 @@ def _get_s_n_for_t(series: pd.Series, test_type: str, molecule: list) -> pd.Seri
         series_t = series.loc[:index]
         squared_diff = series_t.diff().dropna() ** 2
         integer_index = series_t.index.get_loc(index)
-        sigma_sq_t = 1 / (integer_index - 1) * sum(squared_diff)
+        sigma_sq_t = np.sqrt(1 / (integer_index - 1) * sum(squared_diff))
 
         max_s_n_value = -np.inf
         max_s_n_critical_value = None  # Corresponds to c_alpha[n,t]
