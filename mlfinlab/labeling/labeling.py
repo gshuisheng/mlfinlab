@@ -51,11 +51,16 @@ def apply_pt_sl_on_t1(close, events, pt_sl, molecule):  # pragma: no cover
     out['sl'] = pd.Series(dtype=events.index.dtype)
 
     # Get events
-    for loc, vertical_barrier in events_['t1'].fillna(close.index[-1]).iteritems():
-        closing_prices = close[loc: vertical_barrier]  # Path prices for a given trade
-        cum_returns = (closing_prices / close[loc] - 1) * events_.at[loc, 'side']  # Path returns
-        out.at[loc, 'sl'] = cum_returns[cum_returns < stop_loss[loc]].index.min()  # Earliest stop loss date
-        out.at[loc, 'pt'] = cum_returns[cum_returns > profit_taking[loc]].index.min()  # Earliest profit taking date
+    for loc, vertical_barrier in events_['t1'].fillna(close.index[-1]).items():
+        # Path prices for a given trade
+        closing_prices = close[loc: vertical_barrier]
+        # Path returns
+        cum_returns = (closing_prices /
+                       close[loc] - 1) * events_.at[loc, 'side']
+        out.at[loc, 'sl'] = cum_returns[cum_returns <
+                                        stop_loss[loc]].index.min()  # Earliest stop loss date
+        out.at[loc, 'pt'] = cum_returns[cum_returns > profit_taking[loc]
+                                        ].index.min()  # Earliest profit taking date
 
     return out
 
@@ -92,7 +97,8 @@ def add_vertical_barrier(t_events, close, num_days=0, num_hours=0, num_minutes=0
     nearest_timestamp = close.index[nearest_index]
     filtered_events = t_events[:nearest_index.shape[0]]
 
-    vertical_barriers = pd.Series(data=nearest_timestamp, index=filtered_events)
+    vertical_barriers = pd.Series(
+        data=nearest_timestamp, index=filtered_events)
     return vertical_barriers
 
 
@@ -136,18 +142,21 @@ def get_events(close, t_events, pt_sl, target, min_ret, num_threads, vertical_ba
 
     # 2) Get vertical barrier (max holding period)
     if vertical_barrier_times is False:
-        vertical_barrier_times = pd.Series(pd.NaT, index=t_events, dtype=t_events.dtype)
+        vertical_barrier_times = pd.Series(
+            pd.NaT, index=t_events, dtype=t_events.dtype)
 
     # 3) Form events object, apply stop loss on vertical barrier
     if side_prediction is None:
         side_ = pd.Series(1.0, index=target.index)
         pt_sl_ = [pt_sl[0], pt_sl[0]]
     else:
-        side_ = side_prediction.reindex(target.index)  # Subset side_prediction on target index.
+        # Subset side_prediction on target index.
+        side_ = side_prediction.reindex(target.index)
         pt_sl_ = pt_sl[:2]
 
     # Create a new df with [v_barrier, target, side] and drop rows that are NA in target
-    events = pd.concat({'t1': vertical_barrier_times, 'trgt': target, 'side': side_}, axis=1)
+    events = pd.concat({'t1': vertical_barrier_times,
+                       'trgt': target, 'side': side_}, axis=1)
     events = events.dropna(subset=['trgt'])
 
     # Apply Triple Barrier
@@ -160,7 +169,6 @@ def get_events(close, t_events, pt_sl, target, min_ret, num_threads, vertical_ba
                                       verbose=verbose)
 
     events['t1'] = first_touch_dates.min(axis=1)
-
 
     if side_prediction is None:
         events = events.drop('side', axis=1)
@@ -192,8 +200,10 @@ def barrier_touched(out_df, events):
         ret = values['ret']
         target = values['trgt']
 
-        pt_level_reached = ret > np.log(1 + target) * events.loc[date_time, 'pt']
-        sl_level_reached = ret < -np.log(1 + target) * events.loc[date_time, 'sl']
+        pt_level_reached = ret > np.log(
+            1 + target) * events.loc[date_time, 'pt']
+        sl_level_reached = ret < - \
+            np.log(1 + target) * events.loc[date_time, 'sl']
 
         if ret > 0.0 and pt_level_reached:
             # Top barrier reached
@@ -238,13 +248,15 @@ def get_bins(triple_barrier_events, close):
 
     # 1) Align prices with their respective events
     events_ = triple_barrier_events.dropna(subset=['t1'])
-    all_dates = events_.index.union(other=events_['t1'].array).drop_duplicates()
+    all_dates = events_.index.union(
+        other=events_['t1'].array).drop_duplicates()
     prices = close.reindex(all_dates, method='bfill')
 
     # 2) Create out DataFrame
     out_df = pd.DataFrame(index=events_.index)
     # Need to take the log returns, else your results will be skewed for short positions
-    out_df['ret'] = np.log(prices.loc[events_['t1'].array].array) - np.log(prices.loc[events_.index])
+    out_df['ret'] = np.log(
+        prices.loc[events_['t1'].array].array) - np.log(prices.loc[events_.index])
     out_df['trgt'] = events_['trgt']
 
     # Meta labeling: Events that were correct will have pos returns
