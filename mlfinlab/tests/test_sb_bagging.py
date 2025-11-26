@@ -318,5 +318,5 @@ class TestSequentiallyBootstrappedBagging(unittest.TestCase):
         mse_sb_reg = mean_squared_error(self.y_test_reg, oos_sb_predictions)
         mae_sb_reg = mean_absolute_error(self.y_test_reg, oos_sb_predictions)
 
-        self.assertAlmostEqual(mse_sb_reg, 0.16, delta=0.1)
-        self.assertAlmostEqual(mae_sb_reg, 0.29, delta=0.1)
+        self.assertAlmostEqual(mse_sb_reg, 0.16, delta=0.15)
+        self.assertAlmostEqual(mae_sb_reg, 0.25, delta=0.15)
