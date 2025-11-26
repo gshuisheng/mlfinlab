@@ -55,7 +55,8 @@ def nested_parts(num_atoms, num_threads, upper_triangle=False):
     num_threads_ = min(num_threads, num_atoms)
 
     for _ in range(num_threads_):
-        part = 1 + 4 * (parts[-1] ** 2 + parts[-1] + num_atoms * (num_atoms + 1.0) / num_threads_)
+        part = 1 + 4 * (parts[-1] ** 2 + parts[-1] +
+                        num_atoms * (num_atoms + 1.0) / num_threads_)
         part = (-1 + part ** 0.5) / 2.0
         parts.append(part)
 
@@ -133,8 +134,7 @@ def mp_pandas_obj(func, pd_obj, num_threads=24, mp_batches=1, lin_mols=True, ver
     else:
         return out
 
-    for i in out:
-        df0 = df0.append(i)
+    df0 = pd.concat(out)
 
     df0 = df0.sort_index()
     return df0
@@ -197,7 +197,8 @@ def report_progress(job_num, num_jobs, time0, task):
     time_stamp = str(dt.datetime.fromtimestamp(time.time()))
 
     msg = time_stamp + ' ' + str(round(msg[0] * 100, 2)) + '% ' + task + ' done after ' + \
-          str(round(msg[1], 2)) + ' minutes. Remaining ' + str(round(msg[2], 2)) + ' minutes.'
+        str(round(msg[1], 2)) + ' minutes. Remaining ' + \
+        str(round(msg[2], 2)) + ' minutes.'
 
     if job_num < num_jobs:
         sys.stderr.write(msg + '\r')
