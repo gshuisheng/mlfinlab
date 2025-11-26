@@ -250,7 +250,7 @@ def get_bins(triple_barrier_events, close):
     events_ = triple_barrier_events.dropna(subset=['t1'])
     all_dates = events_.index.union(
         other=events_['t1'].array).drop_duplicates()
-    prices = close.reindex(all_dates, method='bfill')
+    prices = close.reindex(all_dates).bfill()
 
     # 2) Create out DataFrame
     out_df = pd.DataFrame(index=events_.index)
