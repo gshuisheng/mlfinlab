@@ -17,7 +17,7 @@ def book_ind_mat_implementation(bar_index, label_endtime):
     Book implementation of get_ind_matrix function
     """
     ind_mat = pd.DataFrame(0, index=bar_index, columns=range(label_endtime.shape[0]))
-    for i, (start, end) in enumerate(label_endtime.iteritems()):
+    for i, (start, end) in enumerate(label_endtime.items()):
         ind_mat.loc[start:end, i] = 1.
     return ind_mat
 
@@ -162,9 +162,9 @@ class TestSampling(unittest.TestCase):
         ind_mat.loc[:, 0] = [1, 1, 1, 0, 0, 0]
         ind_mat.loc[:, 1] = [0, 0, 1, 1, 0, 0]
         ind_mat.loc[:, 2] = [0, 0, 0, 0, 1, 1]
-        ind_mat = ind_mat.values
+        ind_mat = np.array(ind_mat.values, dtype=np.float64)
 
-        prev_concurrency = np.zeros(ind_mat.shape[0])
+        prev_concurrency = np.zeros(ind_mat.shape[0], dtype=np.float64)
 
         first_iteration = _bootstrap_loop_run(ind_mat, prev_concurrency)
         self.assertTrue((first_iteration == np.array([1.0, 1.0, 1.0])).all())  # First iteration should always yield 1
