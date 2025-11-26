@@ -203,11 +203,13 @@ def drawdown_and_time_under_water(returns: pd.Series, dollars: bool = False) -> 
     else:
         drawdown = 1 - high_watermarks['min'] / high_watermarks['hwm']
 
-    time_under_water = ((high_watermarks.index[1:] - high_watermarks.index[:-1]) / np.timedelta64(1, 'Y')).values
+    # Use 365.25 days as approximate year (Y unit no longer supported in pandas)
+    year_timedelta = np.timedelta64(365, 'D') + np.timedelta64(6, 'h')  # ~365.25 days
+    time_under_water = ((high_watermarks.index[1:] - high_watermarks.index[:-1]) / year_timedelta).values
 
     # Adding also period from last High watermark to last return observed.
     time_under_water = np.append(time_under_water,
-                                 (returns.index[-1] - high_watermarks.index[-1]) / np.timedelta64(1, 'Y'))
+                                 (returns.index[-1] - high_watermarks.index[-1]) / year_timedelta)
 
     time_under_water = pd.Series(time_under_water, index=high_watermarks.index)
 
