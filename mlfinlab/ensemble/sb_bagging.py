@@ -14,11 +14,12 @@ from sklearn.ensemble._bagging import BaseBagging
 from sklearn.ensemble._base import _partition_estimators
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.utils.random import sample_without_replacement
-from sklearn.utils import indices_to_mask
+from sklearn.utils._mask import indices_to_mask
 from sklearn.metrics import accuracy_score, r2_score
 from sklearn.utils.validation import has_fit_parameter
-from sklearn.utils import check_random_state, check_array, check_consistent_length, check_X_y
-from sklearn.utils._joblib import Parallel, delayed
+from sklearn.utils import check_random_state, check_array, check_consistent_length
+from sklearn.utils.validation import check_X_y
+from joblib import Parallel, delayed
 
 from mlfinlab.sampling.bootstrapping import seq_bootstrap, get_ind_matrix
 
@@ -72,7 +73,7 @@ def _parallel_build_estimators(n_estimators, ensemble, X, y, ind_mat, sample_wei
     max_features = ensemble._max_features
     max_samples = ensemble._max_samples
     bootstrap_features = ensemble.bootstrap_features
-    support_sample_weight = has_fit_parameter(ensemble.base_estimator_,
+    support_sample_weight = has_fit_parameter(ensemble.estimator_,
                                               "sample_weight")
 
     if not support_sample_weight and sample_weight is not None:
@@ -142,7 +143,7 @@ class SequentiallyBootstrappedBaseBagging(BaseBagging, metaclass=ABCMeta):
                  random_state=None,
                  verbose=0):
         super().__init__(
-            base_estimator=base_estimator,
+            estimator=base_estimator,
             n_estimators=n_estimators,
             bootstrap=True,
             max_samples=max_samples,
@@ -217,7 +218,7 @@ class SequentiallyBootstrappedBaseBagging(BaseBagging, metaclass=ABCMeta):
 
         # Convert data (X is required to be 2d and indexable)
         X, y = check_X_y(
-            X, y, ['csr', 'csc'], dtype=None, force_all_finite=False,
+            X, y, ['csr', 'csc'], dtype=None, ensure_all_finite=False,
             multi_output=True
         )
         if sample_weight is not None:
@@ -245,7 +246,7 @@ class SequentiallyBootstrappedBaseBagging(BaseBagging, metaclass=ABCMeta):
         # Validate max_features
         if isinstance(self.max_features, (numbers.Integral, np.integer)):
             max_features = self.max_features
-        elif isinstance(self.max_features, np.float):
+        elif isinstance(self.max_features, float):
             max_features = self.max_features * self.n_features_
         else:
             raise ValueError("max_features must be int or float")

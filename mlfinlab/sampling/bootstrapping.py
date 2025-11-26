@@ -89,13 +89,13 @@ def get_ind_mat_label_uniqueness(ind_mat):
 
 
 @jit(parallel=True, nopython=True)
-def _bootstrap_loop_run(ind_mat, prev_concurrency):  # pragma: no cover
+def _bootstrap_loop_run_jit(ind_mat, prev_concurrency):  # pragma: no cover
     """
-    Part of Sequential Bootstrapping for-loop. Using previously accumulated concurrency array, loops through all samples
+    JIT-compiled part of Sequential Bootstrapping for-loop. Using previously accumulated concurrency array, loops through all samples
     and generates averages uniqueness array of label based on previously accumulated concurrency
 
-    :param ind_mat (np.array): Indicator matrix from get_ind_matrix function
-    :param prev_concurrency (np.array): Accumulated concurrency from previous iterations of sequential bootstrapping
+    :param ind_mat (np.array): Indicator matrix from get_ind_matrix function (must be float64)
+    :param prev_concurrency (np.array): Accumulated concurrency from previous iterations of sequential bootstrapping (must be float64)
     :return: (np.array): Label average uniqueness based on prev_concurrency
     """
     avg_unique = np.zeros(ind_mat.shape[1])  # Array of label uniqueness
@@ -112,6 +112,20 @@ def _bootstrap_loop_run(ind_mat, prev_concurrency):  # pragma: no cover
                 prev_average_uniqueness = average_uniqueness
         avg_unique[i] = average_uniqueness
     return avg_unique
+
+
+def _bootstrap_loop_run(ind_mat, prev_concurrency):
+    """
+    Wrapper for Sequential Bootstrapping for-loop that ensures proper array types.
+
+    :param ind_mat (np.array): Indicator matrix from get_ind_matrix function
+    :param prev_concurrency (np.array): Accumulated concurrency from previous iterations of sequential bootstrapping
+    :return: (np.array): Label average uniqueness based on prev_concurrency
+    """
+    # Ensure arrays are float64 for numba compatibility
+    ind_mat = np.asarray(ind_mat, dtype=np.float64)
+    prev_concurrency = np.asarray(prev_concurrency, dtype=np.float64)
+    return _bootstrap_loop_run_jit(ind_mat, prev_concurrency)
 
 
 def seq_bootstrap(ind_mat, sample_length=None, warmup_samples=None, compare=False, verbose=False,
@@ -132,6 +146,8 @@ def seq_bootstrap(ind_mat, sample_length=None, warmup_samples=None, compare=Fals
     :param random_state: (np.random.RandomState) Random state
     :return: (array) Bootstrapped samples indexes
     """
+    # Ensure ind_mat is float64 for numba compatibility
+    ind_mat = np.asarray(ind_mat, dtype=np.float64)
 
     if sample_length is None:
         sample_length = ind_mat.shape[1]
@@ -140,9 +156,9 @@ def seq_bootstrap(ind_mat, sample_length=None, warmup_samples=None, compare=Fals
         warmup_samples = []
 
     phi = []  # Bootstrapped samples
-    prev_concurrency = np.zeros(ind_mat.shape[0])  # Init with zeros (phi is empty)
+    prev_concurrency = np.zeros(ind_mat.shape[0], dtype=np.float64)  # Init with zeros (phi is empty)
     while len(phi) < sample_length:
-        avg_unique = _bootstrap_loop_run(ind_mat, prev_concurrency)
+        avg_unique = _bootstrap_loop_run_jit(ind_mat, prev_concurrency)
         prob = avg_unique / sum(avg_unique)  # Draw prob
         try:
             choice = warmup_samples.pop(0)  # It would get samples from warmup until it is empty
